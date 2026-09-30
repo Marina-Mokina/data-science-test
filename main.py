@@ -5,7 +5,9 @@ from src.classifier import classify
 from src.extractor import extract
 from src.zone_checker import check_zone
 
+
 DATASET_PATH = Path("dataset.json")
+RESULTS_PATH = Path("results.json")
 REPORT_PATH = Path("RESULTS.md")
 
 
@@ -28,6 +30,7 @@ def _process_records(dataset: list[dict]) -> list[dict]:
 
         if record["id"].startswith("R"):
             result["extracted"] = extract(record["text"])
+
             record_type, confidence = classify(record["text"])
             result["type"] = record_type
             result["type_confidence"] = confidence
@@ -112,6 +115,13 @@ def _build_report(results: list[dict]) -> str:
             "The classifier returns `unknown` when the difference "
             "between the two highest scores is below 0.15.",
             "",
+            "The threshold 0.15 was chosen to avoid forcing a "
+            "classification when the scores of the two most likely "
+            "record types are too close. In such cases, the system "
+            "returns `unknown`.",
+            "",
+            "Missing fields in Part 1 are returned as `None`.",
+            "",
             "## Part 3. Development zone analysis",
             "",
             "| ID | Observation | Related | Confidence | Reason |",
@@ -138,10 +148,14 @@ def _build_report(results: list[dict]) -> str:
     lines.extend(
         [
             "",
-            "## Model",
+            "## Approach and fallback",
             "",
-            "Zone analysis was performed using the local "
-            "`qwen2.5:7b-instruct` model through Ollama.",
+            "Zone analysis primarily uses the local "
+            "`qwen2.5:7b-instruct` model through Ollama. "
+            "If the LLM is unavailable or returns an invalid "
+            "response, the pipeline falls back to keyword matching. "
+            "The fallback is more deterministic but less flexible "
+            "for semantically complex observations.",
         ]
     )
 
@@ -153,9 +167,17 @@ def main() -> None:
         dataset = json.load(file)
 
     results = _process_records(dataset)
-    REPORT_PATH.write_text(_build_report(results), encoding="utf-8")
+
+    with RESULTS_PATH.open("w", encoding="utf-8") as file:
+        json.dump(results, file, ensure_ascii=False, indent=2)
+
+    REPORT_PATH.write_text(
+        _build_report(results),
+        encoding="utf-8",
+    )
 
     print(f"Processed {len(results)} records.")
+    print(f"JSON results saved to {RESULTS_PATH}")
     print(f"Report saved to {REPORT_PATH}")
 
 

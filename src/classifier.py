@@ -5,6 +5,10 @@ from typing import Dict, Tuple
 UNKNOWN_THRESHOLD = 0.15
 MAX_CONFIDENCE = 0.99
 DEFAULT_CONFIDENCE = 0.35
+OBSERVATION_SCORE = 0.30
+LESSON_REPORT_SCORE = 0.85
+PARENT_NOTE_SCORE = 0.90
+RECOMMENDATION_SCORE = 0.90
 
 
 TYPE_MARKERS: Dict[str, tuple[str, ...]] = {
@@ -69,13 +73,13 @@ def classify(text: str) -> Tuple[str, float]:
         for marker in markers:
             if marker in normalized:
                 if record_type == "observation":
-                    scores[record_type] += 0.30
+                    scores[record_type] += OBSERVATION_SCORE
                 elif record_type == "lesson_report":
-                    scores[record_type] += 0.85
+                    scores[record_type] += LESSON_REPORT_SCORE
                 elif record_type == "parent_note":
-                    scores[record_type] += 0.90
+                    scores[record_type] += PARENT_NOTE_SCORE
                 elif record_type == "recommendation":
-                    scores[record_type] += 0.90
+                    scores[record_type] += RECOMMENDATION_SCORE
 
     ranked = sorted(
         scores.items(),
